@@ -1,4 +1,4 @@
-The bisect gem provides helpers for dealing with sorted Arrays.
+The bisect gem provides helpers for dealing with sorted Arrays. It uses binary search to reduce the number of comparisons that need to be run.
 
 Installation
 ============
