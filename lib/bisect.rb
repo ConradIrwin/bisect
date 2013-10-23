@@ -3,6 +3,13 @@
 # http://svn.python.org/view/python/branches/py3k/Lib/bisect.py?view=markup&pathrev=70846
 #
 module Bisect
+  # The default comparison function
+  # We use a function as it can then be compiled by the JVM or Rubinius JIT
+  def self.__b_compare__(x, y)
+    x < y
+  end
+  B_COMPARE = method(:__b_compare__)
+
   class << self
 
     # Insert item x in list a, and keep it sorted assuming a is sorted.
@@ -11,8 +18,8 @@ module Bisect
     #
     # Optional args lo (default 0) and hi (default len(a)) bound the
     # slice of a to be searched.
-    def insort_right(a, x, lo=0, hi=a.size)
-      index = bisect_right(a, x, lo, hi)
+    def insort_right(a, x, lo=0, hi=a.size, &compare)
+      index = bisect_right(a, x, lo, hi, &compare)
       a.insert(index, x)
     end
     alias_method :insort, :insort_right
@@ -25,12 +32,14 @@ module Bisect
     #
     # Optional args lo (default 0) and hi (default len(a)) bound the
     # slice of a to be searched.
-    def bisect_right(a, x, lo=0, hi=a.size)
+    def bisect_right(a, x, lo=0, hi=a.size, &compare)
       raise ArgumentError, "lo must be non-negative" if lo < 0
+
+      compare = B_COMPARE unless compare.respond_to? :call
 
       while lo < hi
         mid = (lo + hi) / 2
-        if x < a[mid]
+        if compare.call(x, a[mid])
           hi = mid
         else
           lo = mid + 1
@@ -47,8 +56,8 @@ module Bisect
     #
     # Optional args lo (default 0) and hi (default len(a)) bound the
     # slice of a to be searched.
-    def insort_left(a, x, lo=0, hi=a.size)
-      index = bisect_left(a, x, lo, hi)
+    def insort_left(a, x, lo=0, hi=a.size, &compare)
+      index = bisect_left(a, x, lo, hi, &compare)
       a.insert(index, x)
     end
 
@@ -60,12 +69,14 @@ module Bisect
     #
     # Optional args lo (default 0) and hi (default len(a)) bound the
     # slice of a to be searched.
-    def bisect_left(a, x, lo=0, hi=a.size)
+    def bisect_left(a, x, lo=0, hi=a.size, &compare)
       raise ArgumentError, "lo must be non-negative" if lo < 0
+
+      compare = B_COMPARE unless compare.respond_to? :call
 
       while lo < hi
         mid = (lo + hi) / 2
-        if a[mid] < x
+        if compare.call(a[mid], x)
           lo = mid + 1
         else
           hi = mid
